@@ -1,0 +1,7 @@
+{
+  "name": "je-mods",
+  "version": "0.1.0",
+  "description": "Progresso das tarefas acima do prompt, painel de subagentes com avatar (/agentes) e árvore de arquivos (/arvore)",
+  "author": { "name": "José Eduardo" },
+  "types": "./types/index.d.ts"
+}

@@ -1,0 +1,6 @@
+{
+  "name": "je-claude-mods",
+  "description": "Mods pessoais do Claude Code (José Eduardo)",
+  "owner": { "name": "José Eduardo" },
+  "plugins": [{ "name": "je-mods", "source": "./" }]
+}
