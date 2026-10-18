@@ -1,3 +1,4 @@
 # Tipos que o Claude Code gera ao carregar o mod
 .claude-plugin/types/
 node_modules/
+__pycache__/
