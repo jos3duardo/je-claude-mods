@@ -3,8 +3,24 @@
 Mods pessoais do Claude Code, num plugin só:
 
 - **Progresso das tarefas**: barra acima do prompt com o andamento do `TodoWrite`/`TaskCreate`.
-- **Subagentes** (`/agentes`): painel com cada subagente, um robô em pixel art animado por agente (corpo na cor da família do modelo), modelo usado, ferramentas e tempo.
+- **Subagentes** (`/agentes`): painel com cada subagente, um robô em pixel art animado com cor e nome astronômico próprios, modelo usado, ferramentas e tempo.
 - **Árvore de arquivos** (`/arvore`): painel com a árvore do diretório da sessão; Enter numa pasta abre/fecha, num arquivo insere `@caminho` no prompt; `●` marca o que o agente editou.
+
+## Como fica
+
+Imagens geradas a partir do que os mods desenham de fato (ver [Atualizar as imagens](#atualizar-as-imagens)).
+
+**Subagentes** — trabalhando (antena pisca, olhos varrem), pronto e falhou:
+
+![Painel de subagentes](docs/agentes.gif)
+
+**Progresso das tarefas**, acima do prompt:
+
+![Barra de tarefas](docs/tarefas.png)
+
+**Árvore de arquivos** com o preview de um arquivo aberto:
+
+![Árvore de arquivos](docs/arvore.png)
 
 ## Instalação (outra máquina)
 
@@ -38,3 +54,13 @@ O marketplace é a própria pasta: editar aqui e rodar `/reload-plugins` numa se
 claude plugin validate ~/projetos/je-claude-mods
 claude plugin test ~/projetos/je-claude-mods
 ```
+
+### Atualizar as imagens
+
+Depois de mexer no visual de um mod:
+
+```bash
+scripts/preview.sh
+```
+
+Ele monta as cenas de `scripts/preview-scenes.tsx` no kit de testes do Claude Code, captura a árvore que cada mod desenha e `scripts/render_preview.py` converte em `docs/*.png` e `docs/agentes.gif`. Precisa de `python3` com Pillow e da fonte DejaVu Sans Mono.
