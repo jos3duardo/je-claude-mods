@@ -9,8 +9,8 @@ const PANE = 'agent-squad'
 const TITLE = 'Subagentes'
 const KEEP = 12
 const FRAME_MS = 400
-// mmc(2, 3, 4, 7): antena, peito, olhar/braço e piscar fecham o ciclo juntos
-const CYCLE = 84
+// mmc(2, 4, 7): antena, olhar e piscar fecham o ciclo juntos
+const CYCLE = 28
 // Subagente "trabalhando" há mais que isso não segura a animação ligada
 const STALE_MS = 30 * 60_000
 const agents = atom({ plugin: 'je-mods', key: 'agents' } as const, [])
@@ -52,42 +52,68 @@ async function animate($: EngineInterface) {
 }
 
 // Robô em pixel art: cada célula do terminal leva dois pixels (▀ com cor de frente e de fundo).
-// Corpo na cor da família do modelo; olho e nome pelo id; o quadro anima enquanto ele trabalha.
-// A antena · R haste · H brilho · B corpo · S sombra · K visor · c peito · L braço/perna
+// Só a cabeça, com contorno, luz de cima à esquerda e reflexo no visor; a expressão é toda nos olhos.
+// Casco, olho e nome por agente, escolhidos no spawn sem repetir no painel; a cor do modelo fica só no rótulo.
+// a/A antena (brilho/base) · R haste · O contorno · H luz · B casco · S sombra · V visor · v reflexo · W orelha
 const SPRITE = [
-  '.....AA.....',
-  '.....RR.....',
-  '..HHHHHHHH..',
-  '.HBBBBBBBBS.',
-  '.BKKKKKKKKS.',
-  '.BKKKKKKKKS.',
-  '.BKKKKKKKKS.',
-  '..SSSSSSSS..',
-  'LLHBcccBBSLL',
-  'L.BBBBBBBS.L',
-  '..LL....LL..',
-  '..LL....LL..',
+  '......aA......',
+  '......RR......',
+  '...OOOOOOOO...',
+  '..OHHHHHHHBO..',
+  '.OHBvvVVVVBSO.',
+  'WOHBVVVVVVBSOW',
+  'WOBBVVVVVVBSOW',
+  '.OBBVVVVVVSSO.',
+  '..OSSSSSSSSO..',
+  '...OOOOOOOO...',
 ]
-const EYE_ROW = 5
-const EYE_COLS = [3, 4, 7, 8]
-const CHEST_ROW = 8
-const CHEST = [4, 5, 6]
-// Braço esquerdo: pixel de baixo quando parado, de cima quando acena
-const ARM = { col: 0, down: 9, up: 7 }
+// Olhos de dois pixels de altura; piscar e "falhou" acendem só o de baixo
+const EYE_ROWS = [5, 6]
+const EYE_COLS = [5, 8]
 const GREEN = '#22c55e'
+const RED = '#ef4444'
 
-type Body = { H: string; B: string; S: string }
+// Pele do robô: luz, casco, sombra, contorno e olho (contrastando com o casco)
+type Skin = { H: string; B: string; S: string; O: string; E: string }
 
-const BODIES: Record<string, Body> = {
-  Opus: { H: '#d8b4fe', B: '#a855f7', S: '#6b21a8' },
-  Sonnet: { H: '#bfdbfe', B: '#3b82f6', S: '#1e3a8a' },
-  Haiku: { H: '#bbf7d0', B: '#22c55e', S: '#14532d' },
-  Fable: { H: '#fef08a', B: '#eab308', S: '#713f12' },
+// Uma por agente: são KEEP peles, então não repete entre os que estão no painel
+const SKINS: Skin[] = [
+  { H: '#fecaca', B: '#ef4444', S: '#991b1b', O: '#450a0a', E: '#67e8f9' },
+  { H: '#fed7aa', B: '#f97316', S: '#9a3412', O: '#431407', E: '#67e8f9' },
+  { H: '#fde68a', B: '#f59e0b', S: '#92400e', O: '#451a03', E: '#a5b4fc' },
+  { H: '#d9f99d', B: '#84cc16', S: '#3f6212', O: '#1a2e05', E: '#f0abfc' },
+  { H: '#a7f3d0', B: '#10b981', S: '#065f46', O: '#022c22', E: '#fde047' },
+  { H: '#a5f3fc', B: '#06b6d4', S: '#155e75', O: '#083344', E: '#fde047' },
+  { H: '#bfdbfe', B: '#3b82f6', S: '#1e40af', O: '#0b1a3a', E: '#fde047' },
+  { H: '#c7d2fe', B: '#6366f1', S: '#3730a3', O: '#1e1b4b', E: '#67e8f9' },
+  { H: '#e9d5ff', B: '#a855f7', S: '#6b21a8', O: '#2e1065', E: '#67e8f9' },
+  { H: '#fbcfe8', B: '#ec4899', S: '#9d174d', O: '#500724', E: '#67e8f9' },
+  { H: '#f5d0fe', B: '#d946ef', S: '#86198f', O: '#4a044e', E: '#fde047' },
+  { H: '#e5e7eb', B: '#9ca3af', S: '#4b5563', O: '#1f2937', E: '#67e8f9' },
+]
+// Cor da família no rótulo do modelo
+const FAMILY_COLORS: Record<string, string> = {
+  Opus: '#a855f7',
+  Sonnet: '#3b82f6',
+  Haiku: '#22c55e',
+  Fable: '#eab308',
 }
-const STEEL: Body = { H: '#e5e7eb', B: '#9ca3af', S: '#4b5563' }
-const FIXED: Record<string, string> = { R: '#9ca3af', L: '#6b7280', K: '#0f172a', c: '#1f2937' }
-const EYE_COLORS = ['#22d3ee', '#f472b6', '#a3e635', '#fb923c', '#e0e7ff']
-const NAMES = ['Bit', 'Pixel', 'Byte', 'Nano', 'Kiko', 'Zeca', 'Tico', 'Juca', 'Lua', 'Faísca', 'Bolota', 'Pipoca']
+const FIXED: Record<string, string> = { R: '#9ca3af', V: '#0f172a', v: '#334155', W: '#e5e7eb' }
+// Antena: [brilho, base] por estado; trabalhando alterna aceso e apagado
+const ANTENNA: Record<'on' | 'off' | 'done' | 'failed', [string, string]> = {
+  on: ['#ffb3b3', '#ff4d4d'],
+  off: ['#5c1a1a', '#5c1a1a'],
+  done: ['#bbf7d0', GREEN],
+  failed: ['#4b5563', '#374151'],
+}
+// Planetas, planetas-anões, luas e estrelas; também sem repetir entre os que estão no painel
+const NAMES = [
+  'Mercúrio', 'Vênus', 'Terra', 'Marte', 'Júpiter', 'Saturno', 'Urano', 'Netuno',
+  'Plutão', 'Ceres', 'Éris', 'Haumea', 'Makemake',
+  'Lua', 'Fobos', 'Deimos', 'Io', 'Europa', 'Ganimedes', 'Calisto', 'Titã', 'Encélado',
+  'Mimas', 'Reia', 'Jápeto', 'Tritão', 'Caronte', 'Oberon', 'Titânia', 'Miranda', 'Ariel',
+  'Sirius', 'Vega', 'Rigel', 'Betelgeuse', 'Antares', 'Polaris', 'Proxima', 'Trappist', 'Kepler',
+]
 const LOOK = [0, -1, 0, 1]
 
 const hash = (text: string) => {
@@ -99,35 +125,44 @@ const hash = (text: string) => {
   return h >>> 0
 }
 
-const pick = <T,>(list: T[], seed: number, salt: number) =>
-  list[Math.floor(seed / Math.pow(7, salt)) % list.length]!
-
 type Pixel = string | undefined
 
-// Antena pisca, olhos varrem e piscam, luz corre no peito, um braço acena
-const pixels = (agent: SquadAgent, body: Body, seed: number, tick: number): Pixel[][] => {
+// Primeiro índice livre a partir do hash do id; com tudo ocupado, fica o do hash
+const firstFree = (size: number, seed: number, isFree: (index: number) => boolean) => {
+  for (let step = 0; step < size; step++) {
+    const index = (seed + step) % size
+    if (isFree(index)) {
+      return index
+    }
+  }
+  return seed % size
+}
+
+// Antena pisca, olhos varrem e piscam
+const pixels = (agent: SquadAgent, skin: Skin, seed: number, tick: number): Pixel[][] => {
   const f = tick + (seed % 5)
   const running = agent.status === 'running'
   const failed = agent.status === 'failed'
   const done = agent.status === 'done'
+  const [glint, bulb] = done ? ANTENNA.done : failed ? ANTENNA.failed : f % 2 === 0 ? ANTENNA.on : ANTENNA.off
   const palette: Record<string, string> = {
     ...FIXED,
-    ...(failed ? { H: body.S, B: body.S, S: '#1f2937' } : body),
-    A: done ? GREEN : failed ? '#4b5563' : f % 2 === 0 ? '#ff4d4d' : '#5c1a1a',
+    ...skin,
+    ...(failed ? { H: skin.S, B: skin.S } : {}),
+    a: glint,
+    A: bulb,
   }
   const grid: Pixel[][] = SPRITE.map(row => [...row].map(key => (key === '.' ? undefined : palette[key])))
-  const eye = done ? GREEN : failed ? '#ef4444' : f % 7 === 0 ? '#334155' : pick(EYE_COLORS, seed, 2)
+  const eye = done ? GREEN : failed ? RED : skin.E
   const look = running ? LOOK[f % LOOK.length]! : 0
-  for (const col of EYE_COLS) {
-    grid[EYE_ROW]![col + look] = eye
-  }
-  CHEST.forEach((col, i) => {
-    const lit = done || (running && i === f % CHEST.length)
-    grid[CHEST_ROW]![col] = lit ? (done ? GREEN : '#fbbf24') : palette.c
-  })
-  if (running && f % 4 < 2) {
-    grid[ARM.down]![ARM.col] = undefined
-    grid[ARM.up]![ARM.col] = palette.L
+  const blink = running && f % 7 === 0
+  // Falhou: olhos caídos, só o pixel de baixo, alargado para fora
+  const cols = failed ? [EYE_COLS[0]! - 1, EYE_COLS[0]!, EYE_COLS[1]!, EYE_COLS[1]! + 1] : EYE_COLS
+  const rows = failed || blink ? EYE_ROWS.slice(1) : EYE_ROWS
+  for (const row of rows) {
+    for (const col of cols) {
+      grid[row]![col + look] = eye
+    }
   }
 
   return grid
@@ -163,14 +198,16 @@ const rows = (grid: Pixel[][]) => {
   return out
 }
 
-const robot = (agent: SquadAgent, family: string | undefined, tick: number) => {
+const robot = (agent: SquadAgent, tick: number) => {
   const seed = hash(agent.id)
-  const body = (family && BODIES[family]) || STEEL
+  // Agente gravado antes de existir pele e nome guardados cai no hash
+  // Estado gravado por uma versão com mais peles não quebra o desenho
+  const skin = SKINS[(agent.skin ?? seed) % SKINS.length]!
 
   return {
-    name: pick(NAMES, seed, 5),
-    color: body.B,
-    rows: rows(pixels(agent, body, seed, tick)),
+    name: agent.name ?? NAMES[seed % NAMES.length]!,
+    color: skin.B,
+    rows: rows(pixels(agent, skin, seed, tick)),
   }
 }
 
@@ -194,12 +231,12 @@ const modelLabel = (model?: string) => {
       ? [modern[1], modern[2], modern[3]]
       : []
   if (!name) {
-    return { text: model, family: undefined, color: undefined }
+    return { text: model, color: undefined }
   }
   const family = name[0]!.toUpperCase() + name.slice(1).toLowerCase()
   const version = major ? ` ${major}${minor ? `.${minor}` : ''}` : ''
 
-  return { text: `${family}${version}`, family, color: BODIES[family]?.B }
+  return { text: `${family}${version}`, color: FAMILY_COLORS[family] }
 }
 
 export const registerAgentSquad: Register = on => {
@@ -225,9 +262,17 @@ export const registerAgentSquad: Register = on => {
       tools: 0,
       startedAt: await $.clock.now(),
     }
-    await update($, agents, list =>
-      [...list.filter(one => one.id !== agent.id), agent].slice(-KEEP),
-    )
+    await update($, agents, list => {
+      // Só quem continua no painel ocupa pele e nome
+      const others = list.filter(one => one.id !== agent.id).slice(-(KEEP - 1))
+      const seed = hash(agent.id)
+      const skins = new Set(others.map(one => one.skin))
+      const names = new Set(others.map(one => one.name))
+      const skin = firstFree(SKINS.length, seed, index => !skins.has(index))
+      const name = NAMES[firstFree(NAMES.length, seed, index => !names.has(NAMES[index]))]
+
+      return [...others, { ...agent, skin, name }]
+    })
     void $.ui.open({ id: PANE, title: TITLE }).catch(() => undefined)
     void animate($)
 
@@ -290,7 +335,7 @@ export const registerAgentSquad: Register = on => {
         )}
         {list.map(agent => {
           const model = modelLabel(agent.model)
-          const bot = robot(agent, model?.family, tick)
+          const bot = robot(agent, tick)
           const time = elapsed((agent.endedAt ?? now) - agent.startedAt)
           const state = STATES[agent.status]
 

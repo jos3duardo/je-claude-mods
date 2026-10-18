@@ -13,6 +13,9 @@ export type SquadAgent = {
   description: string
   type: string
   model?: string
+  // Índice da pele e nome escolhidos no spawn, sem repetir no painel
+  skin?: number
+  name?: string
   status: SquadStatus
   tools: number
   lastTool?: string

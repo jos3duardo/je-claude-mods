@@ -130,3 +130,39 @@ test('falha com olhos vermelhos', async ($, on) => {
   const pixels = JSON.stringify((await ui.findAll({ type: 'Text', text: /^[▀▄█ ]+$/ })).map(pixel => pixel.props))
   expect(pixels).toContain('#ef4444')
 })
+
+// Mesmo hash do módulo: monta ids que caem na mesma pele e no mesmo nome, para a regra ter o que desviar
+const hash = (text: string) => {
+  let h = 2166136261
+  for (let i = 0; i < text.length; i++) {
+    h ^= text.charCodeAt(i)
+    h = Math.imul(h, 16777619)
+  }
+  return h >>> 0
+}
+
+test('cada agente no painel tem cor e nome astronômico próprios', async ($, on) => {
+  // 12 ids com o mesmo hash % 12 (pele) e % 40 (nome): sem a regra, todos sairiam iguais
+  const first = hash('d0')
+  const ids = ['d0']
+  for (let i = 1; ids.length < 12; i++) {
+    const h = hash(`d${i}`)
+    if (h % 12 === first % 12 && h % 40 === first % 40) ids.push(`d${i}`)
+  }
+  let next = 0
+  on('agent.spawn', () => ({ model: 'sonnet', agentId: ids[next++]! }))
+  let saved: { skin?: number; name?: string }[] = []
+  on('state.set', ($, e, next) => {
+    if (e.key === 'agents') saved = e.value as typeof saved
+    return next(e)
+  })
+  mock.clock(on, { now: 0 })
+
+  for (let i = 0; i < 12; i++) {
+    await $.agent.spawn({ prompt: 'x', description: `Tarefa ${i}`, subagentType: 'Explore' })
+  }
+
+  expect(saved).toHaveLength(12)
+  expect(new Set(saved.map(one => one.skin)).size).toBe(12)
+  expect(new Set(saved.map(one => one.name)).size).toBe(12)
+})
