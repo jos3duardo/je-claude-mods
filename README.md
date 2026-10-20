@@ -1,6 +1,6 @@
 # je-mods
 
-Mods pessoais do Claude Code, num plugin só:
+Mods do Claude Code, num plugin só:
 
 - **Progresso das tarefas**: barra acima do prompt com o andamento do `TodoWrite`/`TaskCreate`.
 - **Subagentes** (`/agentes`): painel com cada subagente, um robô em pixel art animado com cor e nome astronômico próprios, modelo usado, ferramentas e tempo.
@@ -22,26 +22,38 @@ Imagens geradas a partir do que os mods desenham de fato (ver [Atualizar as imag
 
 ![Árvore de arquivos](docs/arvore.png)
 
-## Instalação (outra máquina)
+## Requisito
 
-O repositório é privado: a máquina precisa ter a chave SSH com acesso ao Gitea. Na prompt de uma sessão do Claude Code:
+Os mods são módulos de hook (`hooks/hooks.json` com `modules`), recurso ainda em acesso antecipado no Claude Code. Sem a variável abaixo o plugin instala e valida, mas nenhum mod roda:
+
+```json
+// ~/.claude/settings.json
+{ "env": { "CLAUDE_CODE_ENABLE_FUNCTION_HOOKS": "1" } }
+```
+
+Depois de ligar, abrir uma sessão nova.
+
+## Instalação
+
+Na prompt de uma sessão do Claude Code:
 
 ```
-/plugin install je-mods --marketplace ssh://git@git-ssh.jos3duardo.com.br:222/jos3duardo/je-claude-mods.git
+/plugin install je-mods --marketplace jos3duardo/je-claude-mods
 ```
 
 Responder `y` para adicionar o marketplace e escolher o escopo (user, o primeiro, vale para toda sessão). Pelo terminal, o equivalente é:
 
 ```bash
-claude plugin marketplace add ssh://git@git-ssh.jos3duardo.com.br:222/jos3duardo/je-claude-mods.git
+claude plugin marketplace add jos3duardo/je-claude-mods
 claude plugin install je-mods@je-claude-mods
 ```
 
 Instalado assim, roda a cópia do commit instalado: para pegar mudança nova, `claude plugin update je-mods@je-claude-mods` e depois `/reload-plugins`.
 
-## Instalação (nesta máquina)
+## Instalação (a partir de um clone local)
 
 ```bash
+git clone https://github.com/jos3duardo/je-claude-mods.git ~/projetos/je-claude-mods
 claude plugin marketplace add ~/projetos/je-claude-mods
 claude plugin install je-mods@je-claude-mods
 ```
